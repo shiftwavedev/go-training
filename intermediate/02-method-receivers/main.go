@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"math"
+	// TODO: Uncomment when implementing Distance calculation
+	// "math"
 )
 
 // Counter tracks an integer count

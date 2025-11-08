@@ -22,7 +22,9 @@ func (d *DataBuffer) Read(p []byte) (n int, err error) {
 	// - Copy data from internal buffer to p
 	// - Update read position
 	// - Return io.EOF when no more data available
-	return 0, nil
+
+	// Return EOF immediately to prevent infinite loops in io.ReadAll
+	return 0, io.EOF
 }
 
 // Write implements io.Writer
@@ -55,7 +57,9 @@ func NewCountingReader(r io.Reader) *CountingReader {
 // Read implements io.Reader
 func (c *CountingReader) Read(p []byte) (n int, err error) {
 	// TODO: Delegate to wrapped reader and count bytes
-	return 0, nil
+
+	// Return EOF immediately to prevent infinite loops in io.Copy/io.ReadAll
+	return 0, io.EOF
 }
 
 // BytesRead returns the total number of bytes read

@@ -3,7 +3,8 @@ package ratelimit
 import (
 	"net/http"
 	"net/url"
-	"strings"
+	// TODO: Uncomment when implementing robots.txt parsing
+	// "strings"
 	"sync"
 	"time"
 )

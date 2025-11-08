@@ -66,7 +66,8 @@ import "C"
 import (
 	"errors"
 	"fmt"
-	"unsafe"
+	// TODO: Uncomment when implementing CGO functions
+	// "unsafe"
 )
 
 // TODO: Implement Add function

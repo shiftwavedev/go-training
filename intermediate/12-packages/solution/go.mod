@@ -1,1 +1,3 @@
-module example.com/packages\n\ngo 1.21\n
+module example.com/packages
+
+go 1.21

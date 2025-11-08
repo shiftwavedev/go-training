@@ -12,6 +12,8 @@ import (
 )
 
 func TestIntegration_WorkerPoolWithQueue(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	q := queue.NewPriorityQueue()
 	pool := worker.NewWorkerPool(q, 3)
 
@@ -69,6 +71,8 @@ func TestIntegration_WorkerPoolWithQueue(t *testing.T) {
 }
 
 func TestIntegration_PriorityProcessing(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	q := queue.NewPriorityQueue()
 	pool := worker.NewWorkerPool(q, 1) // Single worker to ensure ordering
 
@@ -128,6 +132,8 @@ func TestIntegration_PriorityProcessing(t *testing.T) {
 }
 
 func TestIntegration_RetryMechanism(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	q := queue.NewPriorityQueue()
 	pool := worker.NewWorkerPool(q, 1)
 
@@ -168,6 +174,8 @@ func TestIntegration_RetryMechanism(t *testing.T) {
 }
 
 func TestIntegration_HighLoad(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	q := queue.NewPriorityQueue()
 	numWorkers := 10
 	pool := worker.NewWorkerPool(q, numWorkers)
@@ -218,6 +226,8 @@ func TestIntegration_HighLoad(t *testing.T) {
 }
 
 func TestIntegration_GracefulShutdown(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	q := queue.NewPriorityQueue()
 	pool := worker.NewWorkerPool(q, 3)
 
@@ -261,6 +271,8 @@ func TestIntegration_GracefulShutdown(t *testing.T) {
 }
 
 func TestIntegration_QueueStats(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	q := queue.NewPriorityQueue()
 	pool := worker.NewWorkerPool(q, 2)
 
@@ -304,6 +316,8 @@ func TestIntegration_QueueStats(t *testing.T) {
 }
 
 func TestIntegration_MixedWorkload(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	q := queue.NewPriorityQueue()
 	pool := worker.NewWorkerPool(q, 5)
 
@@ -368,6 +382,8 @@ func TestIntegration_MixedWorkload(t *testing.T) {
 }
 
 func TestTaskHandlers(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	// Test the default handlers
 	result, err := processTaskHandler([]byte("test data"))
 	assert.NoError(t, err)

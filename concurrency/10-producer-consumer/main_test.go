@@ -7,6 +7,8 @@ import (
 
 // TestNewProducerConsumer tests initialization
 func TestNewProducerConsumer(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented: %v", r)
@@ -27,6 +29,8 @@ func TestNewProducerConsumer(t *testing.T) {
 
 // TestProducerConsumerBasic tests basic producer-consumer flow
 func TestProducerConsumerBasic(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented or panic occurred: %v", r)
@@ -68,6 +72,8 @@ func TestProducerConsumerBasic(t *testing.T) {
 
 // TestProducerConsumerMultiple tests multiple producers and consumers
 func TestProducerConsumerMultiple(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented or panic occurred: %v", r)
@@ -110,6 +116,8 @@ func TestProducerConsumerMultiple(t *testing.T) {
 
 // TestProducerConsumerBufferFull tests buffer saturation
 func TestProducerConsumerBufferFull(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented or panic occurred: %v", r)
@@ -146,6 +154,8 @@ func TestProducerConsumerBufferFull(t *testing.T) {
 
 // TestProducerConsumerNoDeadlock tests for deadlock scenarios
 func TestProducerConsumerNoDeadlock(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented or panic occurred: %v", r)
@@ -177,6 +187,8 @@ func TestProducerConsumerNoDeadlock(t *testing.T) {
 
 // TestProducerConsumerShutdown tests graceful shutdown
 func TestProducerConsumerShutdown(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented or panic occurred: %v", r)
@@ -220,6 +232,8 @@ func TestProducerConsumerShutdown(t *testing.T) {
 
 // TestProducerConsumerOrdering tests FIFO ordering
 func TestProducerConsumerOrdering(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented or panic occurred: %v", r)
@@ -251,6 +265,8 @@ func TestProducerConsumerOrdering(t *testing.T) {
 
 // TestProducerConsumerEmptyBuffer tests shutdown with empty buffer
 func TestProducerConsumerEmptyBuffer(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatalf("Function not implemented or panic occurred: %v", r)
@@ -285,6 +301,8 @@ func TestProducerConsumerEmptyBuffer(t *testing.T) {
 
 // TestProducerConsumerStress stress tests the system
 func TestProducerConsumerStress(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}

@@ -1,9 +1,10 @@
 package main
 
 import (
+	// TODO: Uncomment for logging
 	"log"
-	"log/slog"
-	"os"
+	// "log/slog"
+	// "os"
 )
 
 // Logger wraps logging functionality

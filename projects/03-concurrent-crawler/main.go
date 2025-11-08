@@ -4,7 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
+	// TODO: Uncomment when implementing crawler output
+	// "fmt"
 	"log"
 	"os"
 	"os/signal"

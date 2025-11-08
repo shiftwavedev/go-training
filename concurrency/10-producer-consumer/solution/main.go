@@ -55,12 +55,15 @@ func (pc *ProducerConsumer) StartConsumer(id int) {
 	go func() {
 		defer pc.wg.Done()
 
+		// Capture done channel to avoid race with Shutdown
+		done := pc.done
+
 		for {
 			select {
 			case item := <-pc.buffer:
 				fmt.Printf("Consumer %d: processing item %d\n", id, item.ID)
 				time.Sleep(200 * time.Millisecond)
-			case <-pc.done:
+			case <-done:
 				// Drain remaining items
 				for {
 					select {

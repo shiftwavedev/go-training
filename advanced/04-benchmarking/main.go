@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	// TODO: Uncomment when implementing benchmarking functions
+	// "bytes"
+	// "encoding/json"
 	"fmt"
-	"strings"
+	// "strings"
 )
 
 // StringConcat concatenates strings using += operator

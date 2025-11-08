@@ -1,9 +1,9 @@
 package main
 
 import (
-	"packages/calculator"
-	"packages/models"
-	"packages/utils"
+	"example.com/packages/calculator"
+	"example.com/packages/models"
+	"example.com/packages/utils"
 	"testing"
 )
 

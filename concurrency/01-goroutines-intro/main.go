@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sync"
+	// TODO: Uncomment for WaitGroup
+	// "sync"
 	"time"
 )
 

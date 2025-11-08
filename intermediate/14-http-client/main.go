@@ -1,10 +1,11 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
+	// TODO: Uncomment for HTTP operations
+	// "bytes"
+	// "encoding/json"
 	"fmt"
-	"io"
+	// "io"
 	"net/http"
 	"time"
 )

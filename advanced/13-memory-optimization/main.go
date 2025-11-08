@@ -1,7 +1,8 @@
 package main
 
 import (
-	"bytes"
+	// TODO: Uncomment when implementing memory optimization
+	// "bytes"
 	"fmt"
 	"sync"
 )

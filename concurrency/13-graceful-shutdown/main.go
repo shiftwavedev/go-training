@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-// Server represents a server that can shutdown gracefully
 type Server struct {
 	workers int
 	wg      sync.WaitGroup
@@ -18,7 +17,6 @@ type Server struct {
 	cancel  context.CancelFunc
 }
 
-// NewServer creates a new server
 func NewServer(workers int) *Server {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Server{
@@ -28,24 +26,30 @@ func NewServer(workers int) *Server {
 	}
 }
 
-// Start launches server workers
-// TODO: Implement worker launching
 func (s *Server) Start() {
-	// TODO: Start worker goroutines
-	// TODO: Each worker respects context cancellation
-	panic("not implemented")
+	for i := 0; i < s.workers; i++ {
+		s.wg.Add(1)
+		go s.worker(i)
+	}
 }
 
-// Shutdown gracefully stops the server
-// TODO: Implement graceful shutdown
 func (s *Server) Shutdown(timeout time.Duration) error {
-	// TODO: Cancel context
-	// TODO: Wait for workers with timeout
-	// TODO: Return error if timeout exceeded
-	panic("not implemented")
+	s.cancel()
+
+	done := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		return nil
+	case <-time.After(timeout):
+		return fmt.Errorf("shutdown timed out after %v", timeout)
+	}
 }
 
-// worker simulates server work
 func (s *Server) worker(id int) {
 	defer s.wg.Done()
 
@@ -55,7 +59,6 @@ func (s *Server) worker(id int) {
 			fmt.Printf("Worker %d: shutting down\n", id)
 			return
 		default:
-			// Simulate work
 			fmt.Printf("Worker %d: processing...\n", id)
 			time.Sleep(500 * time.Millisecond)
 		}
@@ -69,16 +72,12 @@ func main() {
 	server := NewServer(3)
 	server.Start()
 
-	// Setup signal handling
-	// TODO: Catch SIGINT and SIGTERM
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	// Wait for signal
 	<-sigChan
 	fmt.Println("\nShutdown signal received")
 
-	// Graceful shutdown with timeout
 	if err := server.Shutdown(5 * time.Second); err != nil {
 		fmt.Printf("Shutdown error: %v\n", err)
 		os.Exit(1)

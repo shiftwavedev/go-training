@@ -24,9 +24,11 @@ func setupTestDB(t *testing.T) *sql.DB {
 }
 
 func TestCreateTask(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - implement handlers and models")
+
 	db := setupTestDB(t)
 	defer db.Close()
-	
+
 	store := models.NewTaskStore(db)
 	router := setupRouter(store)
 	
@@ -47,6 +49,8 @@ func TestCreateTask(t *testing.T) {
 }
 
 func TestGetTask(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - implement handlers and models")
+
 	db := setupTestDB(t)
 	defer db.Close()
 	
@@ -72,6 +76,8 @@ func TestGetTask(t *testing.T) {
 }
 
 func TestListTasks(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - implement handlers and models")
+
 	db := setupTestDB(t)
 	defer db.Close()
 	
@@ -96,6 +102,8 @@ func TestListTasks(t *testing.T) {
 }
 
 func TestDeleteTask(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - implement handlers and models")
+
 	db := setupTestDB(t)
 	defer db.Close()
 	

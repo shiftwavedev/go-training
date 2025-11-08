@@ -4,7 +4,8 @@ package main
 
 import (
 	"fmt"
-	"runtime"
+	// TODO: Uncomment when implementing platform info
+	// "runtime"
 )
 
 // Version information (injected at build time)

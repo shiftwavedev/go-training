@@ -20,6 +20,8 @@ func setupTestDB(t *testing.T) (*sql.DB, *UserRepository) {
 }
 
 func TestInitDB(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	tests := []struct {
 		name    string
 		dbPath  string
@@ -63,6 +65,8 @@ func TestInitDB(t *testing.T) {
 }
 
 func TestUserRepositoryCreate(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 
@@ -118,6 +122,8 @@ func TestUserRepositoryCreate(t *testing.T) {
 }
 
 func TestUserRepositoryCreateDuplicateEmail(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 
@@ -134,6 +140,8 @@ func TestUserRepositoryCreateDuplicateEmail(t *testing.T) {
 }
 
 func TestUserRepositoryGet(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 
@@ -195,6 +203,8 @@ func TestUserRepositoryGet(t *testing.T) {
 }
 
 func TestUserRepositoryUpdate(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 
@@ -272,6 +282,8 @@ func TestUserRepositoryUpdate(t *testing.T) {
 }
 
 func TestUserRepositoryDelete(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 
@@ -322,6 +334,8 @@ func TestUserRepositoryDelete(t *testing.T) {
 }
 
 func TestUserRepositoryList(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 
@@ -398,6 +412,8 @@ func TestUserRepositoryList(t *testing.T) {
 }
 
 func TestUserRepositoryCreateMultiple(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 
@@ -475,6 +491,8 @@ func TestUserRepositoryCreateMultiple(t *testing.T) {
 }
 
 func TestUserRepositoryTransaction(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	db, repo := setupTestDB(t)
 	defer db.Close()
 

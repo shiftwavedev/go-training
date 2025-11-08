@@ -12,6 +12,8 @@ import (
 )
 
 func TestHandler_SET(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -33,6 +35,8 @@ func TestHandler_SET(t *testing.T) {
 }
 
 func TestHandler_GET(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -56,6 +60,8 @@ func TestHandler_GET(t *testing.T) {
 }
 
 func TestHandler_DEL(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -83,6 +89,8 @@ func TestHandler_DEL(t *testing.T) {
 }
 
 func TestHandler_EXISTS(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -106,6 +114,8 @@ func TestHandler_EXISTS(t *testing.T) {
 }
 
 func TestHandler_KEYS(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -129,6 +139,8 @@ func TestHandler_KEYS(t *testing.T) {
 }
 
 func TestHandler_EXPIRE(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -152,6 +164,8 @@ func TestHandler_EXPIRE(t *testing.T) {
 }
 
 func TestHandler_TTL(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -180,6 +194,8 @@ func TestHandler_TTL(t *testing.T) {
 }
 
 func TestHandler_InvalidCommand(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -195,6 +211,8 @@ func TestHandler_InvalidCommand(t *testing.T) {
 }
 
 func TestHandler_SETWithSpaces(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -216,6 +234,8 @@ func TestHandler_SETWithSpaces(t *testing.T) {
 }
 
 func TestHandler_CaseInsensitiveCommands(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -240,6 +260,8 @@ func TestHandler_CaseInsensitiveCommands(t *testing.T) {
 }
 
 func TestHandler_EmptyCommand(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -255,6 +277,8 @@ func TestHandler_EmptyCommand(t *testing.T) {
 }
 
 func TestHandler_MissingArguments(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -282,6 +306,8 @@ func TestHandler_MissingArguments(t *testing.T) {
 }
 
 func TestHandler_WALPersistence(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -322,6 +348,8 @@ func TestHandler_WALPersistence(t *testing.T) {
 }
 
 func TestHandler_MultipleCommands(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 
@@ -352,6 +380,8 @@ func TestHandler_MultipleCommands(t *testing.T) {
 }
 
 func TestHandler_KEYSPattern(t *testing.T) {
+	t.Fatal("TODO: This exercise starter code is fully implemented - add proper TODOs")
+
 	tmpDir := t.TempDir()
 	walPath := filepath.Join(tmpDir, "test.wal")
 

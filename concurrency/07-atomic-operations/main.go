@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"sync/atomic"
+	// TODO: Uncomment for atomic operations
+	// "sync/atomic"
 )
 
 // AtomicCounter uses atomic operations

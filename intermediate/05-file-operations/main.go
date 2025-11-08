@@ -1,11 +1,12 @@
 package main
 
 import (
-	"bufio"
+	// TODO: Uncomment when implementing file operations
+	// "bufio"
 	"fmt"
-	"io"
+	// "io"
 	"os"
-	"path/filepath"
+	// "path/filepath"
 )
 
 // FileInfo holds file metadata

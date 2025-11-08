@@ -1,3 +1,0 @@
-advanced/07-database-access
-intermediate/12-packages
-intermediate/15-http-server

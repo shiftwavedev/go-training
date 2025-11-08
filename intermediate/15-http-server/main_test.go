@@ -10,8 +10,10 @@ import (
 )
 
 func TestUserStore(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	store := NewUserStore()
-	
+
 	// Test Create
 	user := store.Create("Alice")
 	if user.Name != "Alice" {
@@ -44,6 +46,8 @@ func TestUserStore(t *testing.T) {
 }
 
 func TestServer_HandleUsers_GET(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	server := NewServer()
 	server.store.Create("Alice")
 	server.store.Create("Bob")
@@ -66,6 +70,8 @@ func TestServer_HandleUsers_GET(t *testing.T) {
 }
 
 func TestServer_HandleUsers_POST(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	server := NewServer()
 	
 	body := bytes.NewBufferString(`{"name":"Charlie"}`)
@@ -87,6 +93,8 @@ func TestServer_HandleUsers_POST(t *testing.T) {
 }
 
 func TestServer_HandleUser_GET(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	server := NewServer()
 	user := server.store.Create("Alice")
 	
@@ -101,6 +109,8 @@ func TestServer_HandleUser_GET(t *testing.T) {
 }
 
 func TestServer_HandleUser_DELETE(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs")
+
 	server := NewServer()
 	user := server.store.Create("Alice")
 	

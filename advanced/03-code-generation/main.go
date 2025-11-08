@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"go/ast"
-	"go/format"
-	"go/parser"
-	"go/token"
+	// TODO: Uncomment when implementing code generation
+	// "go/ast"
+	// "go/format"
+	// "go/parser"
+	// "go/token"
 	"os"
-	"strings"
-	"text/template"
+	// "strings"
+	// "text/template"
 )
 
 //go:generate go run main.go -input=example.go -output=example_generated.go

@@ -1,6 +1,6 @@
 package calculator
 
-import "packages/calculator/internal/ops"
+import "example.com/packages/calculator/internal/ops"
 
 func Add(a, b int) int {
 	return ops.Add(a, b)

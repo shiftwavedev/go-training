@@ -3,89 +3,129 @@ package main
 import (
 	"fmt"
 	"sync"
-	"time"
 )
 
-// BuggyCounter has a race condition
-// TODO: Fix this race
+// BuggyCounter demonstrates a race condition with concurrent counter increments
+// TODO: Fix the race condition in Increment() and Value() methods
+// Hint: Consider using sync/atomic or sync.Mutex
 type BuggyCounter struct {
-	count int  // RACE: concurrent access without protection
+	count int64
 }
 
 func (c *BuggyCounter) Increment() {
-	c.count++  // RACE!
+	// TODO: This has a race condition!
+	// Multiple goroutines reading and writing c.count simultaneously
+	c.count++
 }
 
-func (c *BuggyCounter) Value() int {
-	return c.count  // RACE!
+func (c *BuggyCounter) Value() int64 {
+	// TODO: This has a race condition when reading while other goroutines write!
+	return c.count
 }
 
-// BuggyMapWriter has concurrent map writes
-// TODO: Fix this race
+// BuggyMapWriter demonstrates race conditions with concurrent map writes
+// TODO: Fix the race condition when writing to the map
+// Hint: Maps are not safe for concurrent access - use sync.Mutex or sync.RWMutex
 func BuggyMapWriter() map[string]int {
 	m := make(map[string]int)
-	
-	for i := 0; i < 10; i++ {
-		go func(v int) {
-			key := fmt.Sprintf("key%d", v)
-			m[key] = v  // RACE: concurrent map write
-		}(i)
-	}
-	
-	time.Sleep(100 * time.Millisecond)
-	return m
-}
-
-// BuggySliceAppend has concurrent slice appends
-// TODO: Fix this race
-func BuggySliceAppend() []int {
-	var s []int
 	var wg sync.WaitGroup
-	
+
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(v int) {
 			defer wg.Done()
-			s = append(s, v)  // RACE: concurrent slice modification
+			key := fmt.Sprintf("key%d", v)
+
+			// TODO: Race condition! Concurrent writes to map will panic
+			m[key] = v
 		}(i)
 	}
-	
+
+	wg.Wait()
+	return m
+}
+
+// BuggySliceAppend demonstrates race conditions with concurrent slice appends
+// TODO: Fix the race condition when appending to the slice
+// Hint: append() is not atomic and slice growth causes races - use sync.Mutex
+func BuggySliceAppend() []int {
+	var s []int
+	var wg sync.WaitGroup
+
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(v int) {
+			defer wg.Done()
+
+			// TODO: Race condition! append() is not safe for concurrent use
+			s = append(s, v)
+		}(i)
+	}
+
 	wg.Wait()
 	return s
 }
 
-// BuggyLoopCapture has loop variable capture race
-// TODO: Fix this race
+// BuggyLoopCapture demonstrates the loop variable capture problem
+// TODO: Fix the loop variable capture issue
+// Hint: The loop variable 'i' is shared across all goroutines
 func BuggyLoopCapture() {
+	var wg sync.WaitGroup
+
 	for i := 0; i < 5; i++ {
+		wg.Add(1)
 		go func() {
-			fmt.Println(i)  // RACE: i is shared
+			defer wg.Done()
+			// TODO: This will likely print the same number multiple times!
+			// The variable 'i' is captured by reference, not by value
+			fmt.Println(i)
 		}()
 	}
-	time.Sleep(100 * time.Millisecond)
+
+	wg.Wait()
 }
 
 func main() {
-	fmt.Println("Race Detector Examples")
+	fmt.Println("Race Condition Examples")
 	fmt.Println("Run with: go run -race main.go")
+	fmt.Println("To see race detection in action!")
 	fmt.Println()
 
-	// Example 1: Counter race
+	// Example 1: Counter with race condition
+	fmt.Println("Example 1: Counter")
 	counter := &BuggyCounter{}
+	var wg sync.WaitGroup
 	for i := 0; i < 100; i++ {
-		go counter.Increment()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			counter.Increment()
+		}()
 	}
-	time.Sleep(100 * time.Millisecond)
-	fmt.Println("Counter:", counter.Value())
+	wg.Wait()
+	fmt.Printf("Counter: %d (expected 100, but races may cause incorrect value)\n", counter.Value())
+	fmt.Println()
 
-	// Example 2: Map race
-	m := BuggyMapWriter()
-	fmt.Println("Map size:", len(m))
+	// Example 2: Map with race condition
+	fmt.Println("Example 2: Map Writer")
+	fmt.Println("(This may panic with 'fatal error: concurrent map writes')")
+	// Uncomment to see the crash:
+	// m := BuggyMapWriter()
+	// fmt.Println("Map size:", len(m))
+	fmt.Println()
 
-	// Example 3: Slice race
+	// Example 3: Slice with race condition
+	fmt.Println("Example 3: Slice Append")
 	s := BuggySliceAppend()
-	fmt.Println("Slice length:", len(s))
+	fmt.Printf("Slice length: %d (expected 10, but races may cause issues)\n", len(s))
+	fmt.Println()
 
-	// Example 4: Loop capture race
+	// Example 4: Loop variable capture
+	fmt.Println("Example 4: Loop Variable Capture")
+	fmt.Println("Should print 0-4, but races may print duplicates:")
 	BuggyLoopCapture()
+	fmt.Println()
+
+	fmt.Println("Run with -race flag to detect these issues!")
+	fmt.Println("Example: go run -race main.go")
 }

@@ -11,7 +11,11 @@ func Multiplex(ch1, ch2 <-chan int) <-chan int {
 	// TODO: Create output channel
 	// TODO: Use select to read from either input
 	// TODO: Handle both channels closing
-	return nil
+
+	// Return closed channel to prevent infinite blocking in tests
+	out := make(chan int)
+	close(out)
+	return out
 }
 
 // Timeout performs an operation with timeout

@@ -52,8 +52,9 @@ func main() {
 	p := NewPerson("Alice", 25, "alice@example.com")
 	fmt.Println(p)
 	fmt.Println("Is adult:", p.IsAdult())
-	
-	s := Student{Person: Person{Name: "Bob", Age: 20, Email: "bob@university.edu"}, GPA: 3.8}
-	fmt.Println(s)
-	fmt.Println("Honor student:", s.IsHonorStudent())
+
+	// TODO: Uncomment after implementing Person and Student structs
+	// s := Student{Person: Person{Name: "Bob", Age: 20, Email: "bob@university.edu"}, GPA: 3.8}
+	// fmt.Println(s)
+	// fmt.Println("Honor student:", s.IsHonorStudent())
 }

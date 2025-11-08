@@ -2,7 +2,8 @@ package main
 
 import (
 	"fmt"
-	"regexp"
+	// TODO: Uncomment for regex
+	// "regexp"
 )
 
 // ValidateEmail checks if string is valid email

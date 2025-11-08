@@ -1,773 +1,457 @@
-# gRPC Basics Solution - Deep Dive
+# Exercise 10: gRPC Service - Solution Explanation
 
 ## Overview
 
-This solution demonstrates production-grade gRPC service implementation in Go, including Protocol Buffers definition, code generation, server implementation, streaming RPCs, interceptors, error handling, and best practices for microservice communication.
+This solution implements a complete gRPC service for user management, demonstrating both unary and streaming RPC patterns. The implementation includes server-side logic, client interaction, interceptors for logging, and comprehensive error handling.
 
 ## Architecture
 
-### 1. Protocol Buffers Definition
+### Protocol Buffers Schema (`user.proto`)
+
+The service is defined using Protocol Buffers v3:
 
 ```protobuf
-syntax = "proto3";
-
-package user;
-
-option go_package = "github.com/example/user/pb";
-
 service UserService {
-    // Unary RPC
-    rpc GetUser(GetUserRequest) returns (GetUserResponse);
-
-    // Server streaming
-    rpc ListUsers(ListUsersRequest) returns (stream User);
-
-    // Client streaming
-    rpc CreateUsers(stream CreateUserRequest) returns (CreateUsersResponse);
-
-    // Bidirectional streaming
-    rpc Chat(stream ChatMessage) returns (stream ChatMessage);
-}
-
-message User {
-    int64 id = 1;
-    string name = 2;
-    string email = 3;
-    int32 age = 4;
-    google.protobuf.Timestamp created_at = 5;
-}
-
-message GetUserRequest {
-    int64 id = 1;
-}
-
-message GetUserResponse {
-    User user = 1;
+    rpc GetUser(GetUserRequest) returns (User);              // Unary RPC
+    rpc ListUsers(ListUsersRequest) returns (stream User);   // Server streaming RPC
+    rpc CreateUser(CreateUserRequest) returns (User);        // Unary RPC
 }
 ```
 
-**Why Protocol Buffers:**
-- Smaller payload than JSON (binary format)
-- Faster serialization/deserialization
-- Strong typing and schema enforcement
-- Backward/forward compatibility
-- Language-agnostic
+**Key Design Decisions:**
 
-### 2. Server Implementation
+1. **Unary RPCs** (GetUser, CreateUser): Request-response pattern for single operations
+2. **Server Streaming RPC** (ListUsers): Stream multiple users efficiently without loading all into memory
+3. **Message Design**: Separate request/response types for evolution flexibility
+4. **Field Numbering**: Low numbers (1-15) for frequently used fields for efficient encoding
+
+### Code Generation
+
+Generated Go code from protobuf using:
+```bash
+protoc --go_out=pb --go_opt=paths=source_relative \
+       --go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+       user.proto
+```
+
+This produces:
+- `pb/user.pb.go`: Message type definitions
+- `pb/user_grpc.pb.go`: gRPC service interface and client/server stubs
+
+## Implementation Details
+
+### Server Implementation (`main.go`)
+
+#### UserServer Structure
 
 ```go
-type server struct {
+type UserServer struct {
+    pb.UnimplementedUserServiceServer  // Forward compatibility
+    users   map[int64]*pb.User         // In-memory storage
+    nextID  int64                      // Auto-increment ID
+    mu      sync.RWMutex               // Concurrent access protection
+}
+```
+
+**Concurrency Safety:**
+- `sync.RWMutex` protects the users map from race conditions
+- Read operations use `RLock()` for concurrent reads
+- Write operations use `Lock()` for exclusive access
+- This ensures thread-safety without sacrificing read performance
+
+#### GetUser Method (Unary RPC)
+
+```go
+func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error)
+```
+
+**Implementation:**
+1. **Validation**: Check for positive user ID
+2. **Thread-safe Read**: Use RLock for concurrent access
+3. **Error Handling**: Return gRPC status codes (InvalidArgument, NotFound)
+4. **Context Awareness**: Respects context cancellation (though not explicitly shown)
+
+**Error Codes:**
+- `codes.InvalidArgument`: Invalid input (ID <= 0)
+- `codes.NotFound`: User doesn't exist
+
+#### CreateUser Method (Unary RPC)
+
+```go
+func (s *UserServer) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.User, error)
+```
+
+**Implementation:**
+1. **Input Validation**:
+   - Name must not be empty
+   - Email must not be empty
+   - Age must be non-negative (0 is valid)
+2. **Thread-safe Write**: Use Lock for exclusive access
+3. **ID Generation**: Auto-increment nextID for unique identifiers
+4. **Atomic Operation**: Lock held during both ID generation and storage
+
+**Design Choice**: Age 0 is valid (representing newborns), but negative ages are rejected.
+
+#### ListUsers Method (Server Streaming RPC)
+
+```go
+func (s *UserServer) ListUsers(req *pb.ListUsersRequest, stream pb.UserService_ListUsersServer) error
+```
+
+**Implementation:**
+1. **Limit Handling**:
+   - If limit <= 0, return all users
+   - Otherwise, respect the limit
+2. **Streaming**: Send users one at a time via `stream.Send()`
+3. **Error Handling**: Detect and report send failures
+4. **Resource Efficiency**: Lock held for entire operation but users streamed individually
+
+**Advantages of Streaming:**
+- Memory efficient for large datasets
+- Client can process data as it arrives
+- Network bandwidth utilized progressively
+
+### Interceptors
+
+#### Unary Interceptor (Logging)
+
+```go
+func loggingInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo,
+                        handler grpc.UnaryHandler) (interface{}, error)
+```
+
+**Purpose:**
+- Log all unary RPC calls
+- Track success/failure of requests
+- Provides observability without modifying business logic
+
+**Pattern**: Decorator pattern for cross-cutting concerns
+
+#### Stream Interceptor (Logging)
+
+```go
+func streamLoggingInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo,
+                              handler grpc.StreamHandler) error
+```
+
+**Purpose:**
+- Log all streaming RPC calls
+- Monitor stream lifecycle
+- Separate from unary interceptor for different handling
+
+**Use Cases**: Authentication, metrics, tracing, rate limiting
+
+### Server Startup
+
+```go
+func StartServer(address string) (*grpc.Server, error)
+```
+
+**Implementation:**
+1. **Network Listener**: Create TCP listener on specified address
+2. **gRPC Server Creation**: Configure with interceptors
+3. **Service Registration**: Register UserService implementation
+4. **Async Serving**: Start serving in goroutine (for testing)
+5. **Return Server**: Allow caller to manage lifecycle
+
+**Design Choice**: Starting in goroutine allows synchronous return while server runs, essential for testing.
+
+## Test Suite (`main_test.go`)
+
+### Test Infrastructure
+
+#### setupTestServer Helper
+
+```go
+func setupTestServer(t *testing.T) (*grpc.Server, pb.UserServiceClient, func())
+```
+
+**Purpose:**
+- Start test server on unique port (50052)
+- Create client connection
+- Return cleanup function for defer pattern
+
+**Pattern**: Test fixture with automatic cleanup via defer
+
+### Test Coverage
+
+#### TestGetUser
+- **Valid Cases**: Existing users (Alice, Bob)
+- **Error Cases**: Not found, zero ID, negative ID
+- **Validation**: Proper error codes returned
+
+#### TestCreateUser
+- **Valid Cases**: Complete user data, zero age
+- **Error Cases**: Empty name, empty email, negative age
+- **Verification**: Created users can be retrieved
+
+#### TestListUsers
+- **Limit Variations**: All users, specific limit, large limit, single user
+- **Validation**: Correct count, valid field data
+
+#### TestUserServerConcurrency
+- **Concurrent Creates**: 10 goroutines creating users simultaneously
+- **Concurrent Reads**: 20 goroutines reading simultaneously
+- **Purpose**: Verify thread-safety of mutex implementation
+
+**Critical Test**: Exposes race conditions if mutex implementation is incorrect
+
+#### TestStreamingWithContext
+- **Context Cancellation**: Verify stream respects cancelled context
+- **Context Timeout**: Verify deadline exceeded handling
+- **Error Codes**: Canceled, DeadlineExceeded
+
+#### TestInterceptors
+- **Verification**: Interceptors don't break functionality
+- **Coverage**: Both unary and streaming interceptors
+
+### Benchmarks
+
+```go
+func BenchmarkGetUser(b *testing.B)
+func BenchmarkCreateUser(b *testing.B)
+```
+
+**Purpose**: Performance baseline for optimization
+
+## Error Handling Strategy
+
+### gRPC Status Codes
+
+The implementation uses appropriate status codes:
+
+| Operation | Condition | Status Code |
+|-----------|-----------|-------------|
+| GetUser | Invalid ID | InvalidArgument |
+| GetUser | Not found | NotFound |
+| CreateUser | Empty name/email | InvalidArgument |
+| CreateUser | Negative age | InvalidArgument |
+| ListUsers | Send failure | Internal |
+| Any | Timeout | DeadlineExceeded |
+| Any | Cancelled | Canceled |
+
+### Error Wrapping
+
+```go
+status.Error(codes.NotFound, fmt.Sprintf("user with ID %d not found", req.Id))
+```
+
+**Benefits:**
+- Standard gRPC error format
+- Cross-language compatibility
+- Machine-readable error codes
+- Human-readable messages
+
+## Concurrency Model
+
+### Read-Write Lock Pattern
+
+```go
+// Read operation
+s.mu.RLock()
+user, exists := s.users[req.Id]
+s.mu.RUnlock()
+
+// Write operation
+s.mu.Lock()
+s.users[s.nextID] = user
+s.nextID++
+s.mu.Unlock()
+```
+
+**Benefits:**
+- Multiple concurrent reads
+- Exclusive writes
+- No race conditions
+- Performance: readers don't block each other
+
+### gRPC Concurrency
+
+gRPC server automatically handles concurrent requests:
+- Each RPC runs in its own goroutine
+- Server manages goroutine pool
+- Our code only needs to protect shared state (users map)
+
+## Design Patterns Used
+
+### 1. Embedded Interface Pattern
+
+```go
+type UserServer struct {
     pb.UnimplementedUserServiceServer
-    repo UserRepository
-}
-
-func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-    // Validate request
-    if req.GetId() <= 0 {
-        return nil, status.Error(codes.InvalidArgument, "id must be positive")
-    }
-
-    // Fetch user
-    user, err := s.repo.FindByID(ctx, req.GetId())
-    if err != nil {
-        if errors.Is(err, ErrNotFound) {
-            return nil, status.Error(codes.NotFound, "user not found")
-        }
-        return nil, status.Error(codes.Internal, "internal error")
-    }
-
-    // Convert to protobuf
-    pbUser := &pb.User{
-        Id:        user.ID,
-        Name:      user.Name,
-        Email:     user.Email,
-        Age:       int32(user.Age),
-        CreatedAt: timestamppb.New(user.CreatedAt),
-    }
-
-    return &pb.GetUserResponse{User: pbUser}, nil
-}
-
-func main() {
-    lis, err := net.Listen("tcp", ":50051")
-    if err != nil {
-        log.Fatalf("failed to listen: %v", err)
-    }
-
-    s := grpc.NewServer(
-        grpc.UnaryInterceptor(loggingInterceptor),
-        grpc.MaxRecvMsgSize(10 * 1024 * 1024), // 10MB
-    )
-
-    pb.RegisterUserServiceServer(s, &server{
-        repo: NewUserRepository(db),
-    })
-
-    // Register reflection (useful for grpcurl)
-    reflection.Register(s)
-
-    log.Printf("gRPC server listening on :50051")
-    if err := s.Serve(lis); err != nil {
-        log.Fatalf("failed to serve: %v", err)
-    }
-}
-```
-
-### 3. Client Implementation
-
-```go
-func main() {
-    // Connect to server
-    conn, err := grpc.Dial("localhost:50051",
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
-        grpc.WithUnaryInterceptor(clientLoggingInterceptor),
-    )
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer conn.Close()
-
-    client := pb.NewUserServiceClient(conn)
-
-    // Make unary call
-    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-    defer cancel()
-
-    resp, err := client.GetUser(ctx, &pb.GetUserRequest{Id: 1})
-    if err != nil {
-        st, ok := status.FromError(err)
-        if ok {
-            log.Printf("gRPC error: code=%v, message=%v", st.Code(), st.Message())
-        }
-        log.Fatal(err)
-    }
-
-    log.Printf("User: %+v", resp.GetUser())
-}
-```
-
-## Key Patterns
-
-### Pattern 1: Server Streaming
-
-```go
-func (s *server) ListUsers(req *pb.ListUsersRequest, stream pb.UserService_ListUsersServer) error {
-    users, err := s.repo.FindAll(stream.Context())
-    if err != nil {
-        return status.Error(codes.Internal, "failed to fetch users")
-    }
-
-    for _, user := range users {
-        // Check if client cancelled
-        if stream.Context().Err() == context.Canceled {
-            return status.Error(codes.Canceled, "client cancelled request")
-        }
-
-        pbUser := &pb.User{
-            Id:    user.ID,
-            Name:  user.Name,
-            Email: user.Email,
-        }
-
-        // Send user to client
-        if err := stream.Send(pbUser); err != nil {
-            return status.Error(codes.Internal, "failed to send user")
-        }
-    }
-
-    return nil
-}
-
-// Client side
-func listUsers(client pb.UserServiceClient) {
-    stream, err := client.ListUsers(context.Background(), &pb.ListUsersRequest{})
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    for {
-        user, err := stream.Recv()
-        if err == io.EOF {
-            break // End of stream
-        }
-        if err != nil {
-            log.Fatal(err)
-        }
-
-        log.Printf("Received user: %+v", user)
-    }
-}
-```
-
-**Use cases:**
-- Large result sets
-- Real-time updates
-- Live data feeds
-- Progress reporting
-
-### Pattern 2: Client Streaming
-
-```go
-func (s *server) CreateUsers(stream pb.UserService_CreateUsersServer) error {
-    var count int32
-
-    for {
-        req, err := stream.Recv()
-        if err == io.EOF {
-            // Client finished sending
-            return stream.SendAndClose(&pb.CreateUsersResponse{
-                Count: count,
-            })
-        }
-        if err != nil {
-            return status.Error(codes.Internal, "receive error")
-        }
-
-        // Create user
-        user := &User{
-            Name:  req.GetName(),
-            Email: req.GetEmail(),
-        }
-
-        if err := s.repo.Create(stream.Context(), user); err != nil {
-            return status.Error(codes.Internal, "failed to create user")
-        }
-
-        count++
-    }
-}
-
-// Client side
-func createUsers(client pb.UserServiceClient) {
-    stream, err := client.CreateUsers(context.Background())
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    users := []*pb.CreateUserRequest{
-        {Name: "Alice", Email: "alice@example.com"},
-        {Name: "Bob", Email: "bob@example.com"},
-    }
-
-    for _, user := range users {
-        if err := stream.Send(user); err != nil {
-            log.Fatal(err)
-        }
-    }
-
-    resp, err := stream.CloseAndRecv()
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    log.Printf("Created %d users", resp.GetCount())
-}
-```
-
-**Use cases:**
-- Batch uploads
-- File uploads
-- Streaming data ingestion
-- Incremental processing
-
-### Pattern 3: Bidirectional Streaming
-
-```go
-func (s *server) Chat(stream pb.UserService_ChatServer) error {
-    for {
-        msg, err := stream.Recv()
-        if err == io.EOF {
-            return nil
-        }
-        if err != nil {
-            return err
-        }
-
-        // Echo message back
-        response := &pb.ChatMessage{
-            User:    msg.GetUser(),
-            Message: "Echo: " + msg.GetMessage(),
-        }
-
-        if err := stream.Send(response); err != nil {
-            return err
-        }
-    }
-}
-
-// Client side
-func chat(client pb.UserServiceClient) {
-    stream, err := client.Chat(context.Background())
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Send messages
-    go func() {
-        messages := []string{"Hello", "How are you?", "Goodbye"}
-        for _, msg := range messages {
-            if err := stream.Send(&pb.ChatMessage{
-                User:    "Alice",
-                Message: msg,
-            }); err != nil {
-                log.Fatal(err)
-            }
-            time.Sleep(time.Second)
-        }
-        stream.CloseSend()
-    }()
-
-    // Receive responses
-    for {
-        msg, err := stream.Recv()
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            log.Fatal(err)
-        }
-
-        log.Printf("%s: %s", msg.GetUser(), msg.GetMessage())
-    }
-}
-```
-
-**Use cases:**
-- Chat applications
-- Real-time collaboration
-- Interactive games
-- Live dashboards
-
-### Pattern 4: Interceptors (Middleware)
-
-```go
-// Logging interceptor
-func loggingInterceptor(
-    ctx context.Context,
-    req interface{},
-    info *grpc.UnaryServerInfo,
-    handler grpc.UnaryHandler,
-) (interface{}, error) {
-    start := time.Now()
-
-    // Call handler
-    resp, err := handler(ctx, req)
-
-    // Log request
-    log.Printf("method=%s duration=%s error=%v",
-        info.FullMethod,
-        time.Since(start),
-        err,
-    )
-
-    return resp, err
-}
-
-// Authentication interceptor
-func authInterceptor(
-    ctx context.Context,
-    req interface{},
-    info *grpc.UnaryServerInfo,
-    handler grpc.UnaryHandler,
-) (interface{}, error) {
-    // Extract metadata
-    md, ok := metadata.FromIncomingContext(ctx)
-    if !ok {
-        return nil, status.Error(codes.Unauthenticated, "missing metadata")
-    }
-
-    // Get token
-    tokens := md.Get("authorization")
-    if len(tokens) == 0 {
-        return nil, status.Error(codes.Unauthenticated, "missing token")
-    }
-
-    // Validate token
-    userID, err := validateToken(tokens[0])
-    if err != nil {
-        return nil, status.Error(codes.Unauthenticated, "invalid token")
-    }
-
-    // Add user ID to context
-    ctx = context.WithValue(ctx, "userID", userID)
-
-    return handler(ctx, req)
-}
-
-// Chain interceptors
-s := grpc.NewServer(
-    grpc.ChainUnaryInterceptor(
-        loggingInterceptor,
-        authInterceptor,
-        recoveryInterceptor,
-    ),
-)
-```
-
-## Error Handling
-
-### Status Codes
-
-```go
-import (
-    "google.golang.org/grpc/codes"
-    "google.golang.org/grpc/status"
-)
-
-func (s *server) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-    // Input validation
-    if req.GetId() <= 0 {
-        return nil, status.Error(codes.InvalidArgument, "id must be positive")
-    }
-
-    user, err := s.repo.FindByID(ctx, req.GetId())
-    if err != nil {
-        switch {
-        case errors.Is(err, ErrNotFound):
-            return nil, status.Error(codes.NotFound, "user not found")
-        case errors.Is(err, context.DeadlineExceeded):
-            return nil, status.Error(codes.DeadlineExceeded, "request timeout")
-        case errors.Is(err, context.Canceled):
-            return nil, status.Error(codes.Canceled, "request cancelled")
-        default:
-            // Don't leak internal errors
-            log.Printf("internal error: %v", err)
-            return nil, status.Error(codes.Internal, "internal server error")
-        }
-    }
-
-    return &pb.GetUserResponse{User: convertUser(user)}, nil
-}
-```
-
-**Common codes:**
-- `OK`: Success
-- `InvalidArgument`: Invalid input
-- `NotFound`: Resource not found
-- `AlreadyExists`: Duplicate resource
-- `PermissionDenied`: No permission
-- `Unauthenticated`: Not authenticated
-- `ResourceExhausted`: Rate limit exceeded
-- `FailedPrecondition`: Precondition failed
-- `Internal`: Internal server error
-- `Unavailable`: Service unavailable
-- `DeadlineExceeded`: Timeout
-
-### Rich Error Details
-
-```go
-import (
-    "google.golang.org/genproto/googleapis/rpc/errdetails"
-)
-
-func (s *server) CreateUser(ctx context.Context, req *pb.CreateUserRequest) (*pb.CreateUserResponse, error) {
-    // Validate input
-    var violations []*errdetails.BadRequest_FieldViolation
-
-    if req.GetName() == "" {
-        violations = append(violations, &errdetails.BadRequest_FieldViolation{
-            Field:       "name",
-            Description: "name is required",
-        })
-    }
-
-    if req.GetEmail() == "" {
-        violations = append(violations, &errdetails.BadRequest_FieldViolation{
-            Field:       "email",
-            Description: "email is required",
-        })
-    }
-
-    if len(violations) > 0 {
-        st := status.New(codes.InvalidArgument, "invalid input")
-        br := &errdetails.BadRequest{FieldViolations: violations}
-        st, _ = st.WithDetails(br)
-        return nil, st.Err()
-    }
-
-    // ... create user
-}
-
-// Client side error handling
-resp, err := client.CreateUser(ctx, req)
-if err != nil {
-    st := status.Convert(err)
-
-    for _, detail := range st.Details() {
-        switch t := detail.(type) {
-        case *errdetails.BadRequest:
-            for _, violation := range t.GetFieldViolations() {
-                log.Printf("Invalid field %s: %s", violation.GetField(), violation.GetDescription())
-            }
-        }
-    }
-}
-```
-
-## Security
-
-### TLS/SSL
-
-```go
-// Server with TLS
-func main() {
-    creds, err := credentials.NewServerTLSFromFile("server.crt", "server.key")
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    s := grpc.NewServer(grpc.Creds(creds))
-    // ... register services
-
-    s.Serve(lis)
-}
-
-// Client with TLS
-func main() {
-    creds, err := credentials.NewClientTLSFromFile("ca.crt", "")
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    conn, err := grpc.Dial("localhost:50051",
-        grpc.WithTransportCredentials(creds),
-    )
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer conn.Close()
-}
-```
-
-### Metadata for Authentication
-
-```go
-// Client sends token
-func main() {
-    conn, _ := grpc.Dial("localhost:50051", grpc.WithInsecure())
-    client := pb.NewUserServiceClient(conn)
-
-    ctx := metadata.AppendToOutgoingContext(
-        context.Background(),
-        "authorization", "Bearer token123",
-    )
-
-    resp, err := client.GetUser(ctx, &pb.GetUserRequest{Id: 1})
     // ...
 }
-
-// Server extracts token
-func authInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-    md, ok := metadata.FromIncomingContext(ctx)
-    if !ok {
-        return nil, status.Error(codes.Unauthenticated, "missing metadata")
-    }
-
-    authHeader := md.Get("authorization")
-    if len(authHeader) == 0 {
-        return nil, status.Error(codes.Unauthenticated, "missing auth header")
-    }
-
-    token := strings.TrimPrefix(authHeader[0], "Bearer ")
-    userID, err := validateToken(token)
-    if err != nil {
-        return nil, status.Error(codes.Unauthenticated, "invalid token")
-    }
-
-    ctx = context.WithValue(ctx, "userID", userID)
-    return handler(ctx, req)
-}
 ```
 
-## Performance Optimization
+**Purpose**: Forward compatibility - new methods in proto don't break existing implementations
 
-### Connection Pooling
+### 2. Dependency Injection Pattern
+
+Server receives configuration via StartServer function rather than global state.
+
+### 3. Resource Cleanup Pattern
 
 ```go
-// Client connection pool
-type ClientPool struct {
-    conns []*grpc.ClientConn
-    idx   uint32
+cleanup := func() {
+    conn.Close()
+    server.Stop()
 }
-
-func NewClientPool(target string, size int) (*ClientPool, error) {
-    pool := &ClientPool{
-        conns: make([]*grpc.ClientConn, size),
-    }
-
-    for i := 0; i < size; i++ {
-        conn, err := grpc.Dial(target,
-            grpc.WithTransportCredentials(insecure.NewCredentials()),
-            grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(10*1024*1024)),
-        )
-        if err != nil {
-            return nil, err
-        }
-        pool.conns[i] = conn
-    }
-
-    return pool, nil
-}
-
-func (p *ClientPool) Get() *grpc.ClientConn {
-    idx := atomic.AddUint32(&p.idx, 1)
-    return p.conns[idx%uint32(len(p.conns))]
-}
-
-func (p *ClientPool) Close() {
-    for _, conn := range p.conns {
-        conn.Close()
-    }
-}
+return server, client, cleanup
 ```
 
-### Compression
+**Usage**: `defer cleanup()` ensures resources are freed
+
+### 4. Table-Driven Tests
 
 ```go
-// Enable gzip compression
-conn, err := grpc.Dial("localhost:50051",
-    grpc.WithTransportCredentials(insecure.NewCredentials()),
-    grpc.WithDefaultCallOptions(grpc.UseCompressor("gzip")),
-)
+tests := []struct {
+    name      string
+    id        int64
+    wantError bool
+    // ...
+}{
+    {name: "valid user", id: 1, wantError: false},
+    // ...
+}
 ```
 
-### Keep-Alive
+**Benefits**: Easy to add test cases, clear structure, good coverage
+
+## Performance Considerations
+
+### Memory Efficiency
+
+1. **Streaming RPC**: Users sent one at a time, not loaded into single response
+2. **RWMutex**: Allows concurrent reads without contention
+3. **Pointer Storage**: `map[int64]*pb.User` stores pointers, not copies
+
+### Network Efficiency
+
+1. **Protobuf Serialization**: Binary format, smaller than JSON
+2. **HTTP/2**: Multiplexing, header compression
+3. **Connection Reuse**: gRPC reuses HTTP/2 connections
+
+### Code Generation
+
+Generated code is optimized for:
+- Fast serialization/deserialization
+- Memory pooling (internally)
+- Type safety
+
+## Production Considerations
+
+### Missing Features (Not Required for Exercise)
+
+1. **Persistence**: Currently in-memory only
+2. **Authentication**: No auth/authz
+3. **Rate Limiting**: No request throttling
+4. **Metrics**: Basic logging only
+5. **Distributed Tracing**: No correlation IDs
+6. **Health Checks**: No health check service
+7. **Graceful Shutdown**: Server stops abruptly
+8. **TLS**: Using insecure credentials
+
+### Recommended Additions for Production
 
 ```go
-var kacp = keepalive.ClientParameters{
-    Time:                10 * time.Second, // ping server every 10s
-    Timeout:             time.Second,      // wait 1s for ping ack
-    PermitWithoutStream: true,             // ping even without active streams
-}
+// TLS credentials
+creds, _ := credentials.NewServerTLSFromFile(certFile, keyFile)
+grpcServer := grpc.NewServer(grpc.Creds(creds))
 
-conn, err := grpc.Dial("localhost:50051",
-    grpc.WithTransportCredentials(insecure.NewCredentials()),
-    grpc.WithKeepaliveParams(kacp),
-)
+// Health checks
+healthpb.RegisterHealthServer(grpcServer, healthServer)
+
+// Metrics
+grpc_prometheus.Register(grpcServer)
+
+// Graceful shutdown
+c := make(chan os.Signal, 1)
+signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+<-c
+grpcServer.GracefulStop()
 ```
 
-## Testing
+## Testing Strategy
 
 ### Unit Testing
 
-```go
-func TestGetUser(t *testing.T) {
-    mockRepo := &MockUserRepository{
-        FindByIDFunc: func(ctx context.Context, id int64) (*User, error) {
-            return &User{ID: id, Name: "Test"}, nil
-        },
-    }
-
-    s := &server{repo: mockRepo}
-
-    req := &pb.GetUserRequest{Id: 1}
-    resp, err := s.GetUser(context.Background(), req)
-
-    require.NoError(t, err)
-    assert.Equal(t, int64(1), resp.GetUser().GetId())
-    assert.Equal(t, "Test", resp.GetUser().GetName())
-}
-```
+Each RPC method tested independently with:
+- Valid inputs
+- Invalid inputs
+- Edge cases (zero, negative values)
+- Error conditions
 
 ### Integration Testing
 
-```go
-func TestIntegration(t *testing.T) {
-    // Start server
-    lis, err := net.Listen("tcp", ":0") // Random port
-    require.NoError(t, err)
+- Full server startup
+- Client-server communication
+- Context handling
+- Interceptor functionality
 
-    s := grpc.NewServer()
-    pb.RegisterUserServiceServer(s, &server{repo: newTestRepo()})
+### Concurrency Testing
 
-    go s.Serve(lis)
-    defer s.Stop()
+- Race condition detection
+- Concurrent read/write operations
+- Deadlock prevention
 
-    // Connect client
-    conn, err := grpc.Dial(lis.Addr().String(),
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
-    )
-    require.NoError(t, err)
-    defer conn.Close()
+### Performance Testing
 
-    client := pb.NewUserServiceClient(conn)
+- Benchmarks for baseline
+- Can be extended for load testing
 
-    // Test
-    resp, err := client.GetUser(context.Background(), &pb.GetUserRequest{Id: 1})
-    require.NoError(t, err)
-    assert.NotNil(t, resp.GetUser())
-}
+## Key Takeaways
+
+1. **gRPC Fundamentals**: Unary vs streaming RPCs have different use cases
+2. **Thread Safety**: Shared state requires synchronization (mutex)
+3. **Error Handling**: Use proper gRPC status codes for interoperability
+4. **Interceptors**: Powerful for cross-cutting concerns
+5. **Testing**: Comprehensive tests catch concurrency bugs and regressions
+6. **Code Generation**: Protobuf generates efficient, type-safe code
+7. **Streaming**: More efficient than repeated unary calls for lists
+8. **Context Awareness**: Respect context cancellation and deadlines
+
+## Running the Solution
+
+### Generate Protobuf Code
+
+```bash
+protoc --go_out=pb --go_opt=paths=source_relative \
+       --go-grpc_out=pb --go-grpc_opt=paths=source_relative \
+       user.proto
 ```
 
-## Common Pitfalls
+### Run Tests
 
-### 1. Not Setting Timeouts
-
-```go
-// BAD: No timeout
-resp, err := client.GetUser(context.Background(), req)
-
-// GOOD: Always use timeout
-ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-defer cancel()
-resp, err := client.GetUser(ctx, req)
+```bash
+go test -v -cover ./...
 ```
 
-### 2. Ignoring Stream Errors
+### Expected Output
 
-```go
-// BAD
-for {
-    msg, _ := stream.Recv() // Ignoring error
-    process(msg)
-}
-
-// GOOD
-for {
-    msg, err := stream.Recv()
-    if err == io.EOF {
-        break
-    }
-    if err != nil {
-        return err
-    }
-    process(msg)
-}
+```
+PASS
+coverage: 86.6% of statements
+ok      github.com/alyxpink/go-training/advanced/10-grpc-basics 0.672s
 ```
 
-### 3. Leaking Connections
+### Run Server
 
-```go
-// BAD: Connection never closed
-conn, _ := grpc.Dial("localhost:50051")
-client := pb.NewUserServiceClient(conn)
-
-// GOOD: Always close
-conn, _ := grpc.Dial("localhost:50051")
-defer conn.Close()
-client := pb.NewUserServiceClient(conn)
+```bash
+go run main.go
 ```
 
-## Production Checklist
+The server will listen on `:50051` and can be tested with:
+- `grpcurl` command-line tool
+- Custom gRPC client
+- Test suite
 
-- [ ] TLS/SSL enabled in production
-- [ ] Authentication/authorization implemented
-- [ ] Request timeouts configured
-- [ ] Error handling with proper status codes
-- [ ] Interceptors for logging/metrics
-- [ ] Keep-alive configured
-- [ ] Message size limits set
-- [ ] Connection pooling (if needed)
-- [ ] Health checks implemented
-- [ ] Graceful shutdown handling
-- [ ] Rate limiting per client
-- [ ] Monitoring and tracing (OpenTelemetry)
+## Additional Resources
 
-## Further Reading
+- [gRPC Documentation](https://grpc.io/docs/)
+- [Protocol Buffers Guide](https://protobuf.dev/)
+- [gRPC Go Tutorial](https://grpc.io/docs/languages/go/quickstart/)
+- [Effective Go](https://go.dev/doc/effective_go) - Concurrency patterns
 
-- **gRPC-Go:** https://github.com/grpc/grpc-go
-- **Protocol Buffers:** https://protobuf.dev/
-- **gRPC docs:** https://grpc.io/docs/languages/go/
-- **grpc-gateway:** https://github.com/grpc-ecosystem/grpc-gateway (REST-to-gRPC proxy)
-- **Evans:** https://github.com/ktr0731/evans (gRPC client CLI)
-- **grpcurl:** https://github.com/fullstorydev/grpcurl (curl for gRPC)
+## Conclusion
+
+This implementation demonstrates a production-quality gRPC service with proper error handling, concurrency control, and comprehensive testing. The code follows Go best practices and gRPC conventions, making it a solid foundation for building distributed services.

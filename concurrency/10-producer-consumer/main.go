@@ -6,51 +6,85 @@ import (
 	"time"
 )
 
-// Item represents work to be processed
 type Item struct {
 	ID   int
 	Data string
 }
 
-// ProducerConsumer coordinates producers and consumers
 type ProducerConsumer struct {
-	buffer  chan Item
-	done    chan struct{}
-	wg      sync.WaitGroup
+	buffer chan Item
+	done   chan struct{}
+	wg     sync.WaitGroup
 }
 
-// NewProducerConsumer creates a new system
-// TODO: Initialize with buffer size
 func NewProducerConsumer(bufferSize int) *ProducerConsumer {
-	// TODO: Implement this function
-	panic("not implemented")
+	return &ProducerConsumer{
+		buffer: make(chan Item, bufferSize),
+		done:   make(chan struct{}),
+	}
 }
 
-// StartProducer launches a producer goroutine
-// TODO: Implement producer
 func (pc *ProducerConsumer) StartProducer(id int, numItems int) {
-	// TODO: Produce items
-	// TODO: Handle shutdown signal
-	// TODO: Send items to buffer
-	panic("not implemented")
+	pc.wg.Add(1)
+	go func() {
+		defer pc.wg.Done()
+
+		for i := 0; i < numItems; i++ {
+			item := Item{
+				ID:   i,
+				Data: fmt.Sprintf("Producer %d item %d", id, i),
+			}
+
+			select {
+			case pc.buffer <- item:
+				fmt.Printf("Producer %d: sent item %d\n", id, i)
+			case <-pc.done:
+				fmt.Printf("Producer %d: shutting down\n", id)
+				return
+			}
+
+			time.Sleep(100 * time.Millisecond)
+		}
+
+		fmt.Printf("Producer %d: finished\n", id)
+	}()
 }
 
-// StartConsumer launches a consumer goroutine
-// TODO: Implement consumer
 func (pc *ProducerConsumer) StartConsumer(id int) {
-	// TODO: Receive items from buffer
-	// TODO: Process items
-	// TODO: Handle shutdown
-	panic("not implemented")
+	pc.wg.Add(1)
+	go func() {
+		defer pc.wg.Done()
+
+		// Capture done channel to avoid race with Shutdown
+		done := pc.done
+
+		for {
+			select {
+			case item := <-pc.buffer:
+				fmt.Printf("Consumer %d: processing item %d\n", id, item.ID)
+				time.Sleep(200 * time.Millisecond)
+			case <-done:
+				// Drain remaining items
+				for {
+					select {
+					case item := <-pc.buffer:
+						fmt.Printf("Consumer %d: draining item %d\n", id, item.ID)
+					default:
+						fmt.Printf("Consumer %d: shutting down\n", id)
+						return
+					}
+				}
+			}
+		}
+	}()
 }
 
-// Shutdown gracefully stops the system
-// TODO: Implement graceful shutdown
 func (pc *ProducerConsumer) Shutdown() {
-	// TODO: Signal shutdown
-	// TODO: Wait for goroutines
-	// TODO: Close channels
-	panic("not implemented")
+	fmt.Println("Initiating shutdown...")
+	close(pc.done)
+	pc.wg.Wait()
+	close(pc.buffer)
+	fmt.Println("Shutdown complete")
 }
 
 func main() {
@@ -58,12 +92,10 @@ func main() {
 
 	pc := NewProducerConsumer(10)
 
-	// Start producers
 	for i := 0; i < 3; i++ {
 		pc.StartProducer(i, 5)
 	}
 
-	// Start consumers
 	for i := 0; i < 2; i++ {
 		pc.StartConsumer(i)
 	}

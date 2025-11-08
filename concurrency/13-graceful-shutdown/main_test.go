@@ -10,6 +10,8 @@ import (
 
 // TestNewServer tests server initialization
 func TestNewServer(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	server := NewServer(3)
 
 	if server == nil {
@@ -31,6 +33,8 @@ func TestNewServer(t *testing.T) {
 
 // TestServerStart tests starting server workers
 func TestServerStart(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			if r == "not implemented" {
@@ -55,6 +59,8 @@ func TestServerStart(t *testing.T) {
 
 // TestServerShutdown tests graceful shutdown
 func TestServerShutdown(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			if r == "not implemented" {
@@ -79,6 +85,8 @@ func TestServerShutdown(t *testing.T) {
 
 // TestServerShutdownTimeout tests shutdown timeout behavior
 func TestServerShutdownTimeout(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			if r == "not implemented" {
@@ -100,6 +108,8 @@ func TestServerShutdownTimeout(t *testing.T) {
 
 // TestServerContextCancellation tests context cancellation
 func TestServerContextCancellation(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			if r == "not implemented" {
@@ -127,6 +137,8 @@ func TestServerContextCancellation(t *testing.T) {
 
 // TestServerMultipleWorkers tests scaling number of workers
 func TestServerMultipleWorkers(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			if r == "not implemented" {
@@ -155,6 +167,8 @@ func TestServerMultipleWorkers(t *testing.T) {
 
 // TestServerSignalHandling tests signal integration
 func TestServerSignalHandling(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	if testing.Short() {
 		t.Skip("Skipping signal test in short mode")
 	}
@@ -193,6 +207,8 @@ func TestServerSignalHandling(t *testing.T) {
 
 // TestServerContextPropagation tests context propagation to workers
 func TestServerContextPropagation(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	defer func() {
 		if r := recover(); r != nil {
 			if r == "not implemented" {
@@ -234,6 +250,8 @@ func TestServerContextPropagation(t *testing.T) {
 
 // TestServerStress stress tests shutdown under load
 func TestServerStress(t *testing.T) {
+	t.Fatal("TODO: This exercise is fully implemented but should be starter code - add proper TODOs to main.go")
+
 	if testing.Short() {
 		t.Skip("Skipping stress test in short mode")
 	}
