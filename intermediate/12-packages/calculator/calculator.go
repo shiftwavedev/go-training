@@ -1,13 +1,11 @@
 package calculator
 
-// Add returns sum of a and b
+import "packages/calculator/internal/ops"
+
 func Add(a, b int) int {
-	// TODO: Use ops package
-	return 0
+	return ops.Add(a, b)
 }
 
-// Subtract returns difference of a and b
 func Subtract(a, b int) int {
-	// TODO: Use ops package
-	return 0
+	return ops.Subtract(a, b)
 }

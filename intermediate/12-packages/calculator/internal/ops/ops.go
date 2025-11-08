@@ -1,13 +1,9 @@
 package ops
 
-// Add performs addition
 func Add(a, b int) int {
-	// TODO: Implement
-	return 0
+	return a + b
 }
 
-// Subtract performs subtraction
 func Subtract(a, b int) int {
-	// TODO: Implement
-	return 0
+	return a - b
 }
