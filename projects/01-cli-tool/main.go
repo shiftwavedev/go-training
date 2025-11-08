@@ -1,13 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/alyxpink/go-training/jq/formatter"
 	"github.com/alyxpink/go-training/jq/query"
 )
 
@@ -66,39 +64,11 @@ func main() {
 }
 
 func processInput(r io.Reader, q *query.Query, filename string) error {
-	var data interface{}
-	if err := json.NewDecoder(r).Decode(&data); err != nil {
-		return fmt.Errorf("parsing JSON: %w", err)
-	}
-
-	result, err := q.Execute(data)
-	if err != nil {
-		return fmt.Errorf("executing query: %w", err)
-	}
-
-	return outputResult(result)
+	panic("not implemented")
 }
 
 func outputResult(data interface{}) error {
-	var f formatter.Formatter
-
-	if *table {
-		f = &formatter.TableFormatter{}
-	} else if *compact {
-		f = &formatter.JSONFormatter{Compact: true}
-	} else if *raw {
-		f = &formatter.RawFormatter{}
-	} else {
-		f = &formatter.JSONFormatter{Compact: false}
-	}
-
-	output, err := f.Format(data)
-	if err != nil {
-		return err
-	}
-
-	fmt.Print(output)
-	return nil
+	panic("not implemented")
 }
 
 func usage() {
