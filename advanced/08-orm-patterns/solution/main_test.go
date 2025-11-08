@@ -10,10 +10,20 @@ import (
 )
 
 func setupTestDB(t *testing.T) *sql.DB {
-	// Use shared cache mode for concurrent access to in-memory database
-	db, err := sql.Open("sqlite3", "file::memory:?cache=shared")
+	// Use WAL mode for better concurrent access to in-memory database
+	db, err := sql.Open("sqlite3", "file::memory:?cache=shared&mode=rwc")
 	if err != nil {
 		t.Fatalf("Failed to open database: %v", err)
+	}
+
+	// Enable WAL mode for better concurrency
+	if _, err := db.Exec("PRAGMA journal_mode=WAL"); err != nil {
+		t.Fatalf("Failed to enable WAL mode: %v", err)
+	}
+
+	// Set busy timeout to handle locks
+	if _, err := db.Exec("PRAGMA busy_timeout=5000"); err != nil {
+		t.Fatalf("Failed to set busy timeout: %v", err)
 	}
 
 	migrator := NewMigrator(db)
@@ -627,24 +637,38 @@ func TestConcurrentUserCreation(t *testing.T) {
 
 	repo := NewUserRepository(db)
 
-	// Create users concurrently
-	done := make(chan bool)
+	// Create users concurrently using errgroup for better error handling
+	type result struct {
+		err error
+		id  int
+	}
+	results := make(chan result, 10)
+
 	for i := 0; i < 10; i++ {
 		go func(id int) {
 			user := &User{
 				Name:  fmt.Sprintf("User%d", id),
 				Email: fmt.Sprintf("user%d@example.com", id),
 			}
-			if err := repo.Create(user); err != nil {
-				t.Errorf("Concurrent create failed: %v", err)
-			}
-			done <- true
+			err := repo.Create(user)
+			results <- result{err: err, id: id}
 		}(i)
 	}
 
-	// Wait for all goroutines
+	// Collect results
+	var errors []error
 	for i := 0; i < 10; i++ {
-		<-done
+		res := <-results
+		if res.err != nil {
+			errors = append(errors, fmt.Errorf("User%d: %w", res.id, res.err))
+		}
+	}
+
+	// Report any errors
+	if len(errors) > 0 {
+		for _, err := range errors {
+			t.Errorf("Concurrent create failed: %v", err)
+		}
 	}
 
 	users, err := repo.FindAll()

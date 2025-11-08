@@ -724,6 +724,69 @@ users := db.Preload("Posts").Find(&users)
 - [ ] Logging slow queries
 - [ ] Benchmarks for critical paths
 
+## Testing Concurrent Database Access
+
+### SQLite WAL Mode for Better Concurrency
+
+The test suite uses SQLite's WAL (Write-Ahead Logging) mode for better concurrent access:
+
+```go
+func setupTestDB(t *testing.T) *sql.DB {
+    // Use WAL mode for better concurrent access to in-memory database
+    db, err := sql.Open("sqlite3", "file::memory:?cache=shared&mode=rwc")
+
+    // Enable WAL mode for better concurrency
+    db.Exec("PRAGMA journal_mode=WAL")
+
+    // Set busy timeout to handle locks
+    db.Exec("PRAGMA busy_timeout=5000")
+
+    return db
+}
+```
+
+**Why WAL Mode?**
+- Allows concurrent reads and writes
+- Readers don't block writers
+- Writers don't block readers
+- Better performance under concurrent load
+
+### Proper Goroutine Error Handling
+
+The concurrent test uses buffered channels to properly collect errors from goroutines:
+
+```go
+func TestConcurrentUserCreation(t *testing.T) {
+    type result struct {
+        err error
+        id  int
+    }
+    results := make(chan result, 10)
+
+    for i := 0; i < 10; i++ {
+        go func(id int) {
+            err := repo.Create(user)
+            results <- result{err: err, id: id}
+        }(i)
+    }
+
+    // Collect and report errors properly
+    var errors []error
+    for i := 0; i < 10; i++ {
+        res := <-results
+        if res.err != nil {
+            errors = append(errors, fmt.Errorf("User%d: %w", res.id, res.err))
+        }
+    }
+}
+```
+
+**Best Practices:**
+- Use buffered channels to prevent goroutine leaks
+- Collect all results before assertions
+- Report errors with context (which operation failed)
+- Never use `t.Errorf` directly in goroutines (race condition)
+
 ## Further Reading
 
 - **GORM:** https://gorm.io/
@@ -731,3 +794,4 @@ users := db.Preload("Posts").Find(&users)
 - **ent:** https://entgo.io/
 - **goose migrations:** https://github.com/pressly/goose
 - **Design Patterns (Fowler):** Patterns of Enterprise Application Architecture
+- **SQLite WAL Mode:** https://www.sqlite.org/wal.html
