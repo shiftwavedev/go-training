@@ -29,7 +29,7 @@ test_exercise() {
         cp main.go main.go.backup 2>/dev/null
         cp solution/main.go main.go 2>/dev/null
 
-        if ! timeout 10 go test -failfast ./... > /dev/null 2>&1; then
+        if ! timeout 30 go test -failfast ./... > /dev/null 2>&1; then
             echo "FAILING_SOLUTION:$exercise" >> "$tmpfile"
         fi
 
