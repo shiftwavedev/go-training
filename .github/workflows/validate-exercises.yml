@@ -30,19 +30,11 @@ jobs:
           go-version: '1.22'
           cache: true
 
-      - name: Build validators
-        run: |
-          echo "🔨 Building Go validators..."
-          cd scripts/starter-validator && go build -v
-          cd ../solution-validator && go build -v
-          cd ../validator && go build -v
-          echo "✅ Validators built successfully"
-
       - name: Run unified validator
         run: |
           echo "🚀 Running unified validator..."
           cd scripts/validator
-          ./validator --verbose ../../
+          go run . --verbose ../../
 
       - name: Upload failed exercises (if any)
         if: failure()

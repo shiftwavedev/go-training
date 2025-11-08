@@ -30,37 +30,40 @@ This directory contains three validators that replace the old bash-based validat
 
 ## Quick Start
 
-### Build All Validators
+### Run All Validations
+
+No build step required! Just use `go run`:
 
 ```bash
 cd scripts/validator
-go build -v
-```
-
-This builds the unified validator which calls the individual validators.
-
-### Run All Validations
-
-```bash
-./validator ../../
+go run . ../../
 ```
 
 ### Run Only Starter Validation
 
 ```bash
-./validator --starter ../../
+go run . --starter ../../
 ```
 
 ### Run Only Solution Validation
 
 ```bash
-./validator --solutions ../../
+go run . --solutions ../../
 ```
 
 ### Verbose Mode
 
 ```bash
-./validator --verbose ../../
+go run . --verbose ../../
+```
+
+### Build Binary (Optional)
+
+If you prefer a compiled binary:
+
+```bash
+go build -v
+./validator ../../
 ```
 
 ## Individual Validators
@@ -75,8 +78,7 @@ Validates that starter code:
 
 ```bash
 cd scripts/starter-validator
-go build
-./starter-validator ../../
+go run . ../../
 ```
 
 ### Solution Validator
@@ -91,8 +93,7 @@ Validates that solutions:
 
 ```bash
 cd scripts/solution-validator
-go build
-./solution-validator ../../
+go run . ../../
 ```
 
 ## Command-Line Flags
@@ -227,12 +228,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
 
-      - name: Build validators
-        run: cd scripts/validator && go build -v
-
       - name: Run unified validator
-        run: cd scripts/validator && ./validator --verbose ../../
+        run: |
+          cd scripts/validator
+          go run . --verbose ../../
 ```
+
+No build step needed - `go run` compiles and runs in one command!
 
 ### Local Development
 
@@ -241,41 +243,31 @@ Add to your workflow:
 ```bash
 # Before committing
 cd scripts/validator
-./validator ../../
+go run . ../../
 
 # Or run individually
-./validator --starter ../../  # Quick check
-./validator --solutions ../../ # Full validation
+go run . --starter ../../  # Quick check
+go run . --solutions ../../ # Full validation
 ```
 
 ## Troubleshooting
 
-### Validator Binary Not Found
+### Go Not Found
 
-If you get "validator binary not found":
-
-```bash
-cd scripts/validator
-go build -v
-```
-
-### Build Errors
-
-If you get build errors, ensure Go 1.22+ is installed:
+If you get "go: command not found", install Go 1.22+:
 
 ```bash
 go version  # Should be 1.22 or higher
-go mod download
-go build -v
 ```
 
-### Permission Denied
+### Module Download Errors
 
-If you get permission errors:
+If dependencies fail to download:
 
 ```bash
-chmod +x validator
-./validator ../../
+cd scripts/validator
+go mod download
+go mod verify
 ```
 
 ### Timeout Issues
@@ -287,26 +279,20 @@ If exercises timeout frequently:
 3. Use `-v` flag to see which test hangs:
 
 ```bash
-./validator -v --starter ../../ | grep "timeout"
+go run . -v --starter ../../ | grep "timeout"
 ```
 
 ## Development
-
-### Building
-
-```bash
-go build -v
-```
 
 ### Testing
 
 ```bash
 # Test on repo
-./validator ../../
+go run . ../../
 
 # Test individual validators
-cd ../starter-validator && go build && ./starter-validator ../../
-cd ../solution-validator && go build && ./solution-validator ../../
+cd ../starter-validator && go run . ../../
+cd ../solution-validator && go run . ../../
 ```
 
 ### Adding Features

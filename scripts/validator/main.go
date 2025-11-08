@@ -130,20 +130,19 @@ func main() {
 }
 
 func runValidator(name string, repoRoot string) int {
-	// Build path to validator binary
-	validatorPath := filepath.Join("..", name, name)
-	if _, err := os.Stat(validatorPath); os.IsNotExist(err) {
-		// Try without directory prefix (for when running from repo root)
-		validatorPath = filepath.Join("scripts", name, name)
-		if _, err := os.Stat(validatorPath); os.IsNotExist(err) {
-			fmt.Fprintf(os.Stderr, "Error: %s binary not found\n", name)
-			fmt.Fprintf(os.Stderr, "Please build it first: cd scripts/%s && go build\n", name)
+	// Build path to validator source directory
+	validatorDir := filepath.Join("..", name)
+	if _, err := os.Stat(validatorDir); os.IsNotExist(err) {
+		// Try from repo root
+		validatorDir = filepath.Join("scripts", name)
+		if _, err := os.Stat(validatorDir); os.IsNotExist(err) {
+			fmt.Fprintf(os.Stderr, "Error: %s directory not found\n", name)
 			return 1
 		}
 	}
 
-	// Build arguments
-	args := []string{}
+	// Build arguments for go run
+	args := []string{"run", "."}
 	if verbose {
 		args = append(args, "-v")
 	}
@@ -163,8 +162,9 @@ func runValidator(name string, repoRoot string) int {
 	}
 	args = append(args, repoRoot)
 
-	// Run validator
-	cmd := exec.Command(validatorPath, args...)
+	// Run validator with go run
+	cmd := exec.Command("go", args...)
+	cmd.Dir = validatorDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 

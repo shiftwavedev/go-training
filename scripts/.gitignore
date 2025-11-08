@@ -1,4 +1,11 @@
-# Validator binaries
+# Validator binaries (built with go build)
 starter-validator/starter-validator
 solution-validator/solution-validator
 validator/validator
+
+# Exercise binaries in solutions
+*/solution/*/
+!*/solution/*.go
+!*/solution/*.mod
+!*/solution/*.sum
+!*/solution/*.md
