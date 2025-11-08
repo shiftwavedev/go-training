@@ -153,8 +153,8 @@ jobs:
           cp main.go main.go.backup
           cp solution/main.go main.go
 
-          # Run with race detector
-          if go test -race -v ./...; then
+          # Run with race detector and -short flag to skip intentionally buggy code
+          if go test -race -short -v ./...; then
             echo "✅ No race conditions detected"
           else
             echo "❌ Race conditions found"

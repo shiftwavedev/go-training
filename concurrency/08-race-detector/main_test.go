@@ -9,6 +9,10 @@ import (
 
 // TestBuggyCounter tests the counter with race conditions
 func TestBuggyCounter(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	counter := &BuggyCounter{}
 	iterations := 1000
 	var wg sync.WaitGroup
@@ -36,6 +40,10 @@ func TestBuggyCounter(t *testing.T) {
 
 // TestBuggyCounterConcurrentReads tests concurrent reads and writes
 func TestBuggyCounterConcurrentReads(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	counter := &BuggyCounter{}
 	done := make(chan bool)
 
@@ -64,6 +72,10 @@ func TestBuggyCounterConcurrentReads(t *testing.T) {
 
 // TestBuggyMapWriter tests concurrent map writes
 func TestBuggyMapWriter(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	// This test may panic due to concurrent map writes
 	// We'll catch the panic to make the test pass
 	defer func() {
@@ -88,6 +100,10 @@ func TestBuggyMapWriter(t *testing.T) {
 
 // TestBuggyMapWriterRace explicitly tests for race detection
 func TestBuggyMapWriterRace(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Logf("Caught panic from concurrent map write: %v", r)
@@ -102,6 +118,10 @@ func TestBuggyMapWriterRace(t *testing.T) {
 
 // TestBuggySliceAppend tests concurrent slice appends
 func TestBuggySliceAppend(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Logf("Caught panic (possible with slice growth races): %v", r)
@@ -133,6 +153,10 @@ func TestBuggySliceAppend(t *testing.T) {
 
 // TestBuggySliceAppendMultiple runs multiple iterations
 func TestBuggySliceAppendMultiple(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			t.Logf("Caught panic: %v", r)
@@ -149,6 +173,10 @@ func TestBuggySliceAppendMultiple(t *testing.T) {
 
 // TestBuggyLoopCapture tests loop variable capture
 func TestBuggyLoopCapture(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	// Capture output by redirecting fmt.Println
 	// This test just ensures the function runs without panic
 
@@ -168,6 +196,10 @@ func TestBuggyLoopCapture(t *testing.T) {
 
 // TestLoopCaptureValues tests what values are actually printed
 func TestLoopCaptureValues(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	// Run the function and wait
 	done := make(chan bool)
 
@@ -183,6 +215,10 @@ func TestLoopCaptureValues(t *testing.T) {
 
 // TestRaceConditionProbability tests likelihood of race detection
 func TestRaceConditionProbability(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	// Run multiple iterations to increase race detection probability
 	iterations := 100
 
@@ -216,6 +252,10 @@ func TestRaceConditionProbability(t *testing.T) {
 
 // BenchmarkBuggyCounter benchmarks counter performance
 func BenchmarkBuggyCounter(b *testing.B) {
+	if testing.Short() {
+		b.Skip("skipping buggy code benchmark with race detector")
+	}
+
 	counter := &BuggyCounter{}
 
 	b.RunParallel(func(pb *testing.PB) {
@@ -229,6 +269,10 @@ func BenchmarkBuggyCounter(b *testing.B) {
 
 // BenchmarkBuggyMapWriter benchmarks map writer
 func BenchmarkBuggyMapWriter(b *testing.B) {
+	if testing.Short() {
+		b.Skip("skipping buggy code benchmark with race detector")
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			b.Logf("Caught panic: %v", r)
@@ -242,6 +286,10 @@ func BenchmarkBuggyMapWriter(b *testing.B) {
 
 // TestConcurrentReadWrite tests mixed read/write operations
 func TestConcurrentReadWrite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping buggy code test with race detector")
+	}
+
 	counter := &BuggyCounter{}
 	done := make(chan bool)
 	var wg sync.WaitGroup
@@ -278,4 +326,110 @@ func TestConcurrentReadWrite(t *testing.T) {
 
 	<-done
 	t.Logf("Final counter value: %d (expected: 500 without races)", counter.Value())
+}
+
+// TestFixedCounter tests the race-free counter implementation
+func TestFixedCounter(t *testing.T) {
+	counter := &FixedCounter{}
+	iterations := 1000
+	var wg sync.WaitGroup
+
+	// Launch multiple goroutines incrementing counter
+	for i := 0; i < iterations; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			counter.Increment()
+		}()
+	}
+
+	wg.Wait()
+
+	value := counter.Value()
+	if value != int64(iterations) {
+		t.Errorf("Counter value %d does not equal iterations %d", value, iterations)
+	}
+
+	t.Logf("Counter value: %d (expected: %d)", value, iterations)
+}
+
+// TestFixedMapWriter tests the race-free map writer
+func TestFixedMapWriter(t *testing.T) {
+	m := FixedMapWriter()
+
+	if len(m) != 10 {
+		t.Errorf("Map size: %d (expected: 10)", len(m))
+	}
+
+	// Verify all keys exist
+	for i := 0; i < 10; i++ {
+		key := fmt.Sprintf("key%d", i)
+		if val, ok := m[key]; !ok {
+			t.Errorf("Missing key: %s", key)
+		} else if val != i {
+			t.Errorf("Incorrect value for %s: got %d, expected %d", key, val, i)
+		}
+	}
+
+	t.Logf("Map correctly contains all 10 entries")
+}
+
+// TestFixedSliceAppend tests the race-free slice append
+func TestFixedSliceAppend(t *testing.T) {
+	s := FixedSliceAppend()
+
+	if len(s) != 10 {
+		t.Errorf("Slice length: %d (expected: 10)", len(s))
+	}
+
+	// Check for duplicates
+	seen := make(map[int]bool)
+	for _, v := range s {
+		if seen[v] {
+			t.Errorf("Duplicate value detected: %d", v)
+		}
+		seen[v] = true
+	}
+
+	if len(seen) != 10 {
+		t.Errorf("Expected 10 unique values, got %d", len(seen))
+	}
+
+	t.Logf("Slice correctly contains 10 unique values")
+}
+
+// TestFixedLoopCapture tests the race-free loop variable capture
+func TestFixedLoopCapture(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("FixedLoopCapture panicked: %v", r)
+		}
+	}()
+
+	FixedLoopCapture()
+
+	// Sleep to let goroutines finish
+	time.Sleep(200 * time.Millisecond)
+
+	t.Log("FixedLoopCapture completed successfully")
+}
+
+// BenchmarkFixedCounter benchmarks the race-free counter
+func BenchmarkFixedCounter(b *testing.B) {
+	counter := &FixedCounter{}
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			counter.Increment()
+		}
+	})
+
+	b.Logf("Final counter value: %d (expected: %d)", counter.Value(), b.N)
+}
+
+// BenchmarkFixedMapWriter benchmarks the race-free map writer
+func BenchmarkFixedMapWriter(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = FixedMapWriter()
+	}
 }

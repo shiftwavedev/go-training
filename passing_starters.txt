@@ -1,3 +1,4 @@
 advanced/07-database-access
+concurrency/08-race-detector
 intermediate/12-packages
 intermediate/15-http-server
