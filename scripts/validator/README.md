@@ -344,10 +344,8 @@ The following bash scripts were replaced and removed:
 - `scripts/test-ci-locally.sh`
 - `scripts/test-ci-locally-starter-code.sh`
 - `scripts/test-ci-locally-validate-solutions.sh`
-
-Utility scripts remain:
-- `scripts/quick-validate.sh` (structure check only)
-- `scripts/parallel-test.sh` (health check)
+- `scripts/quick-validate.sh` (replaced by Go validators)
+- `scripts/parallel-test.sh` (replaced by Go validators)
 
 ## FAQ
 
